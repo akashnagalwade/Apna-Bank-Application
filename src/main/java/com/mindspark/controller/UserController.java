@@ -68,7 +68,6 @@ public class UserController {
 	    userService.updateUser(user);
 	    return "Record is updated";
 	}
-	
 	@GetMapping("users/{id}")
 	public User getUser(@PathVariable long id) {
 		return userService.findByUserId(id);

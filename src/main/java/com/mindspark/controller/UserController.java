@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
-import com.mindspark.dto.CreditDebitRequest;
+import com.mindspark.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,9 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mindspark.dto.BankResponse;
-import com.mindspark.dto.EnquiryRequest;
-import com.mindspark.dto.UserRequest;
 import com.mindspark.model.User;
 import com.mindspark.service.UserService;
 
@@ -92,5 +89,11 @@ public class UserController {
 	public BankResponse debitAcc(@RequestBody CreditDebitRequest request){
 		return userService.debitAccount(request);
 	}
+
+	@PostMapping("/transfer")
+	public BankResponse transfer(@RequestBody TransferRequest request){
+		return userService.transfer(request);
+	}
+
 	
 }

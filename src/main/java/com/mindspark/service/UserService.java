@@ -3,10 +3,7 @@ package com.mindspark.service;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.mindspark.dto.BankResponse;
-import com.mindspark.dto.CreditDebitRequest;
-import com.mindspark.dto.EnquiryRequest;
-import com.mindspark.dto.UserRequest;
+import com.mindspark.dto.*;
 import com.mindspark.model.User;
 
 public interface UserService {
@@ -34,4 +31,6 @@ public interface UserService {
 	public BankResponse creditAccount(CreditDebitRequest request);
 
 	public BankResponse debitAccount(CreditDebitRequest request);
+
+	public BankResponse transfer(TransferRequest request);
 }

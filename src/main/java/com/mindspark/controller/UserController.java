@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Locale;
 
 import com.mindspark.dto.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,21 +24,47 @@ import com.mindspark.service.UserService;
 
 @RestController
 @RequestMapping("/api/v1/user")
+@Tag(name = "User Account Management APIs")
 public class UserController {
 
 	@Autowired
 	private UserService userService;
+
+	@Operation(
+			summary = "Create New User Account",
+			description = "Creating a new User and Assigning a Account ID"
+	)
+	@ApiResponse(
+			responseCode = "200",
+			description = "http Status 200 CREATED"
+	)
 
 	@PostMapping("/createuser")
 	public BankResponse createAccount(@RequestBody UserRequest userRequest) {
 		return userService.createAccount(userRequest);
 	}
 
+	@Operation(
+			summary = "Get All The User Details",
+			description = "Getting all the users with information"
+	)
+	@ApiResponse(
+			responseCode = "201",
+			description = "http Status 201 ACCEPTED"
+	)
 	@GetMapping("/allUsers")
 	public List<User> getAllUsers(){
 		return userService.getAllUser();
 	}
 
+	@Operation(
+			summary = "Get All User With Created Date",
+			description = "Getting all user which are created on that date"
+	)
+	@ApiResponse(
+			responseCode = "202",
+			description = "http Status 202 ACCEPTED"
+	)
 	@GetMapping
 	public List<User> getAllUserWithDate(@RequestParam(value = "date") String date){
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ENGLISH);
@@ -43,6 +72,14 @@ public class UserController {
 	    return userService.getAllUsers(date1);
 	}
 
+	@Operation(
+			summary = "Enquiry About Balance",
+			description = "Saving the given request to enquire the Balance"
+	)
+	@ApiResponse(
+			responseCode = "203",
+			description = "http Status 203 SUCCESS"
+	)
 	@PostMapping("/balanceEnquiry")
 	public BankResponse balanceEnquiry(@RequestBody EnquiryRequest enquiryRequest) {
 		return userService.balanceEnquiry(enquiryRequest);

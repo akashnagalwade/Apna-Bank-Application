@@ -20,6 +20,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     EmailService emailService;
 
+    @Autowired
+    TransactionService service;
+
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
         /*
@@ -180,6 +183,15 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userToCredit);
         //System.out.println(userToCredit);
 
+        //            save transaction
+        TransactionDetails transactionDetails = TransactionDetails.builder()
+                .accountNumber(userToCredit.getAccountNumber())
+                .transactionType("CREDIT")
+                .amount(request.getAmount())
+                .build();
+
+        service.saveTransaction(transactionDetails);
+
         return BankResponse.builder()
                 .responseCode(AccountUtils.ACCOUNT_CREDIT_SUCCESS)
                 .responseMessage(AccountUtils.ACCOUNT_CREDIT_MESSAGE)
@@ -217,6 +229,16 @@ public class UserServiceImpl implements UserService {
         } else {
             userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(request.getAmount()));
             userRepository.save(userToDebit);
+
+            //            save transaction
+            TransactionDetails transactionDetails = TransactionDetails.builder()
+                    .accountNumber(userToDebit.getAccountNumber())
+                    .transactionType("DEBIT")
+                    .amount(request.getAmount())
+                    .build();
+
+            service.saveTransaction(transactionDetails);
+
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_DEBIT_SUCCESS)
                     .responseMessage(AccountUtils.ACCOUNT_DEBIT_MESSAGE)
@@ -269,18 +291,36 @@ public class UserServiceImpl implements UserService {
 
         emailService.sendEmailAlert(debitAlert);
 
-        User destinationAccountUser = userRepository.findByAccountNumber(request.getBeneficiaryAccountNumber());
-        destinationAccountUser.setAccountBalance(destinationAccountUser.getAccountBalance().add(request.getAmount()));
-        userRepository.save(destinationAccountUser);
+        //            save transaction
+        TransactionDetails transactionDetails = TransactionDetails.builder()
+                .accountNumber(sourceAccountUser.getAccountNumber())
+                .transactionType("CREDIT")
+                .amount(request.getAmount())
+                .build();
+
+        service.saveTransaction(transactionDetails);
+
+        User beneficiaryAccountUser = userRepository.findByAccountNumber(request.getBeneficiaryAccountNumber());
+        beneficiaryAccountUser.setAccountBalance(beneficiaryAccountUser.getAccountBalance().add(request.getAmount()));
+        userRepository.save(beneficiaryAccountUser);
 
 //        String recepientUsername = destinationAccountUser.getFirstName() + " " + destinationAccountUser.getLastName();
         EmailDetails creditAlert = EmailDetails.builder()
                 .subject("CREDIT ALERT")
-                .recipent(destinationAccountUser.getEmail())
+                .recipent(beneficiaryAccountUser.getEmail())
                 .messageBody("the sum of " + request.getAmount() + " has been sent to your account from " + sourceUserName + " your current balance is " + sourceAccountUser.getAccountBalance())
                 .build();
 
         emailService.sendEmailAlert(debitAlert);
+
+        //            save transaction
+        TransactionDetails transactionDetail = TransactionDetails.builder()
+                .accountNumber(beneficiaryAccountUser.getAccountNumber())
+                .transactionType("DEBIT")
+                .amount(request.getAmount())
+                .build();
+
+        service.saveTransaction(transactionDetail);
 
         return BankResponse.builder()
                 .responseCode(AccountUtils.TRANSFER_SUCCESSFULL_CODE)

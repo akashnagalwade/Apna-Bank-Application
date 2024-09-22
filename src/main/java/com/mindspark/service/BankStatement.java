@@ -4,6 +4,7 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.mindspark.dto.EmailDetails;
 import com.mindspark.model.Transaction;
 import com.mindspark.model.User;
 import com.mindspark.repository.TransactionRepository;
@@ -31,6 +32,9 @@ public class BankStatement {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     private static final String FILE = "D:\\MyStatement.pdf";
 
@@ -139,6 +143,15 @@ public class BankStatement {
         document.add(transactionTable);
 
         document.close();
+
+        EmailDetails emailDetails = EmailDetails.builder()
+                .recipent(user.getEmail())
+                .subject("STATEMENT OF ACCOUNT")
+                .messageBody("Kindly find your requested account statement attach")
+                .attachment(FILE)
+                .build();
+
+        emailService.sendEmailWithAttachment(emailDetails);
 
         return transList;
 

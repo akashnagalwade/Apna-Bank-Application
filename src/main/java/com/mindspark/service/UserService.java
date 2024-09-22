@@ -14,7 +14,7 @@ public interface UserService {
 	
 	String nameEnquiry(EnquiryRequest request);
 	
-	public List<User>getAllUsers(LocalDate date);
+	public List<User>getAllUsersWhichAreCreatedOnDate(LocalDate date);
 	
 	public User getAccountDetail(String accountNumber);
 

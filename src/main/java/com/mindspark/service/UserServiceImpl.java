@@ -1,6 +1,7 @@
 package com.mindspark.service;
 
 import com.mindspark.dto.*;
+import com.mindspark.exception.*;
 import com.mindspark.model.User;
 import com.mindspark.repository.UserRepository;
 import com.mindspark.utils.AccountUtils;
@@ -23,8 +24,17 @@ public class UserServiceImpl implements UserService {
     @Autowired
     TransactionService service;
 
+
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
+
+        // Validate required fields
+//        if (userRequest.getFirstName() == null || userRequest.getFirstName().isEmpty()) {
+//            throw new InvalidUserInputException("First name cannot be null or empty.");
+//        }
+//        if (userRequest.getPhoneNumber() == null || userRequest.getPhoneNumber().isEmpty()) {
+//            throw new InvalidUserInputException("phone number cannot be null or empty.");
+//        }
         /*
          * creating an account- saving a new user into the database if the user already
          * has an account then
@@ -45,6 +55,7 @@ public class UserServiceImpl implements UserService {
                 .stateOfOrigin(userRequest.getStateOfOrigin())
                 .accountNumber(AccountUtils.generateAccountNumber())
                 .email(userRequest.getEmail())
+                .password(userRequest.getPassword())
                 .accountBalance(BigDecimal.ZERO)
                 .phoneNumber(userRequest.getPhoneNumber())
                 .alternatePhoneNumber(userRequest.getAlternatePhoneNumber())
@@ -53,7 +64,6 @@ public class UserServiceImpl implements UserService {
         User saveUser = userRepository.save(newUser);
 
         // set email alert
-
         EmailDetails emailDetails = EmailDetails.builder()
                 .recipent(saveUser.getEmail())
                 .subject("Account Creation.")
@@ -76,18 +86,38 @@ public class UserServiceImpl implements UserService {
 
     //balance Enquiry, name Enquiry, Credit and debit, transfer
 
-    public List<User> getAllUsers(LocalDate date) {
-        return userRepository.findUsersCreatedAt(date);
+    public List<User> getAllUsersWhichAreCreatedOnDate(LocalDate date) {
+        // Check if the provided date is valid (you can customize this validation as needed)
+        if (date == null) {
+            throw new InvalidDateException("The provided date cannot be null.");
+        }
+        List<User> usersCreatedAt = userRepository.findUsersCreatedAt(date);
+
+        // Check if the list is null or empty
+        if (usersCreatedAt == null || usersCreatedAt.isEmpty()) {
+            throw new UsersNotFoundException("No users found for the provided date: " + date);
+        }
+        return usersCreatedAt;
     }
+
 
     @Override
     public User getAccountDetail(String accountNumber) {
-        return userRepository.findByAccountNumber(accountNumber);
+        User user = userRepository.findByAccountNumber(accountNumber);
+
+        if (user == null) {
+            throw new AccountNotFoundException("The account number '" + accountNumber + "' does not exist.");
+        }
+        return user;
     }
+
 
     @Override
     public User updateUser(User user) {
-        User existingUser = userRepository.findById(user.getId()).orElse(null);
+        User existingUser = userRepository.findById(user.getId()).get();
+        if(existingUser == null){
+            throw new UserNotFoundException("User not found with this id "+user.getId());
+        }
         existingUser.setFirstName(user.getFirstName());
         existingUser.setLastName(user.getLastName());
         existingUser.setOtherName(user.getOtherName());
@@ -152,18 +182,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String nameEnquiry(EnquiryRequest request) {
-        // Check if the provided account number exists in the database
-        boolean isAccountExist = userRepository.existsByAccountNumber(request.getAccountNumber());
-
-        if (!isAccountExist) {
-            System.out.println("Account does not exist: " + request.getAccountNumber()); // Debugging log
-            return AccountUtils.ACCOUNT_NOT_EXIST_MESSAGE;
-
+        // Validate the request object
+        if (request == null || request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Request or first name must not be null or empty");
         }
-        // If the account exists, proceed
-        User foundUser = userRepository.findByAccountNumber(request.getAccountNumber());
+
+        String firstName = request.getFirstName().trim();
+
+        // Find users by first name
+        List<User> foundUsers = userRepository.findByFirstName(firstName);
+
+        // Check if the list is empty
+        if (foundUsers.isEmpty()) {
+            // Log the situation if needed
+            System.out.println("Account does not exist: " + firstName); // For debugging
+            return AccountUtils.ACCOUNT_NOT_EXIST_MESSAGE;
+        }
+
+        // Assuming you want the first user if multiple users are found
+        User foundUser = foundUsers.get(0);
+        // Return the full name
         return foundUser.getFirstName() + " " + foundUser.getLastName();
     }
+
 
 
     @Override
@@ -292,6 +333,7 @@ public class UserServiceImpl implements UserService {
         emailService.sendEmailAlert(debitAlert);
 
         //            save transaction
+
         TransactionDetails transactionDetails = TransactionDetails.builder()
                 .accountNumber(sourceAccountUser.getAccountNumber())
                 .transactionType("CREDIT")
@@ -305,6 +347,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(beneficiaryAccountUser);
 
 //        String recepientUsername = destinationAccountUser.getFirstName() + " " + destinationAccountUser.getLastName();
+
         EmailDetails creditAlert = EmailDetails.builder()
                 .subject("CREDIT ALERT")
                 .recipent(beneficiaryAccountUser.getEmail())
@@ -314,6 +357,7 @@ public class UserServiceImpl implements UserService {
         emailService.sendEmailAlert(debitAlert);
 
         //            save transaction
+
         TransactionDetails transactionDetail = TransactionDetails.builder()
                 .accountNumber(beneficiaryAccountUser.getAccountNumber())
                 .transactionType("DEBIT")

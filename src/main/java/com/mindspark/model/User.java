@@ -3,6 +3,7 @@ package com.mindspark.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -24,13 +25,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @Table(name = "users")
 
-public class User {
+public class User{
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 	private String firstName;
 	private String lastName;
+	private String password;
 	private String otherName;
 	private String gender;
 	private String address;

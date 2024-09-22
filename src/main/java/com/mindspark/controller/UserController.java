@@ -9,6 +9,7 @@ import com.mindspark.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +24,7 @@ import com.mindspark.model.User;
 import com.mindspark.service.UserService;
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping("/api/v1/users")
 @Tag(name = "User Account Management APIs")
 public class UserController {
 
@@ -39,8 +40,8 @@ public class UserController {
 			description = "http Status 200 CREATED"
 	)
 
-	@PostMapping("/createuser")
-	public BankResponse createAccount(@RequestBody UserRequest userRequest) {
+	@PostMapping("/create")
+	public BankResponse createAccount(@Valid @RequestBody UserRequest userRequest) {
 		return userService.createAccount(userRequest);
 	}
 
@@ -66,10 +67,10 @@ public class UserController {
 			description = "http Status 202 ACCEPTED"
 	)
 	@GetMapping
-	public List<User> getAllUserWithDate(@RequestParam(value = "date") String date){
+	public List<User> getAllUserWithCreatedDate(@RequestParam(value = "date") String date) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ENGLISH);
 	    LocalDate date1 = LocalDate.parse(date, formatter);
-	    return userService.getAllUsers(date1);
+	    return userService.getAllUsersWhichAreCreatedOnDate(date1);
 	}
 
 	@Operation(
@@ -85,49 +86,48 @@ public class UserController {
 		return userService.balanceEnquiry(enquiryRequest);
 	}
 
-	@GetMapping("/nameEnquiry")
+	@PostMapping("/nameEnquiry")
 	public String nameEnquiry(@RequestBody EnquiryRequest request){
 		return userService.nameEnquiry(request);
 	}
-	
-	
+
 	@GetMapping("/{accountNumber}")
 	public User getAccountDetail(@PathVariable String accountNumber) {
 		System.out.println("-----");
 		return userService.getAccountDetail(accountNumber);
 	}
 	
-	@PutMapping("/{id}")
+	@PutMapping("/update")
 	public String updateUser(@RequestBody User user) {
 	    userService.updateUser(user);
 	    return "Record is updated";
 	}
-	@GetMapping("users/{id}")
+	@GetMapping("user/{id}")
 	public User getUser(@PathVariable long id) {
 		return userService.findByUserId(id);
 	}
 	
-	@GetMapping("/name/{firstName}")
+	@GetMapping("user/name/{firstName}")
 	public List<User> getUserByName(@PathVariable String firstName) {
 		return userService.findByFirstName(firstName);
 	}
 	
-	@GetMapping("/mail/{email}")
+	@GetMapping("user/mail/{email}")
 	public User getUserByEmail(@PathVariable String email) {
 		return userService.findUserByEmail(email);
 	}
 
-	@PostMapping("/creditAccount")
+	@PostMapping("admin/creditAccount")
 	public BankResponse creditAcc(@RequestBody CreditDebitRequest request){
 		return userService.creditAccount(request);
 	}
 
-	@PostMapping("/debitAccount")
+	@PostMapping("admin/debitAccount")
 	public BankResponse debitAcc(@RequestBody CreditDebitRequest request){
 		return userService.debitAccount(request);
 	}
 
-	@PostMapping("/transfer")
+	@PostMapping("admin/transfer")
 	public BankResponse transfer(@RequestBody TransferRequest request){
 		return userService.transfer(request);
 	}

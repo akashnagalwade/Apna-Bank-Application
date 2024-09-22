@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 public class EnquiryRequest {
 
+	private String firstName;
 	private String accountNumber;
 	
 }

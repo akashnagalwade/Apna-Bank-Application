@@ -1,11 +1,17 @@
 package com.mindspark.service;
 
+import com.mindspark.config.JwtTokenProvider;
 import com.mindspark.dto.*;
 import com.mindspark.exception.*;
+import com.mindspark.model.Role;
 import com.mindspark.model.User;
 import com.mindspark.repository.UserRepository;
 import com.mindspark.utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -24,6 +30,14 @@ public class UserServiceImpl implements UserService {
     @Autowired
     TransactionService service;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    AuthenticationManager authenticationManager;
+
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
 
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
@@ -55,10 +69,11 @@ public class UserServiceImpl implements UserService {
                 .stateOfOrigin(userRequest.getStateOfOrigin())
                 .accountNumber(AccountUtils.generateAccountNumber())
                 .email(userRequest.getEmail())
-                .password(userRequest.getPassword())
+                .password(passwordEncoder.encode(userRequest.getPassword()))
                 .accountBalance(BigDecimal.ZERO)
                 .phoneNumber(userRequest.getPhoneNumber())
                 .alternatePhoneNumber(userRequest.getAlternatePhoneNumber())
+                .role(Role.valueOf("ROLE_ADMIN"))
                 .status("ACTIVE").build();
 
         User saveUser = userRepository.save(newUser);
@@ -82,6 +97,34 @@ public class UserServiceImpl implements UserService {
                         .build())
                 .build();
 
+    }
+
+    public BankResponse login(LoginDto loginDto) {
+        try {
+            Authentication authentication = null;
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+            );
+
+            EmailDetails loginAlert = EmailDetails.builder()
+                    .subject("You're logged in!")
+                    .recipent(loginDto.getEmail())
+                    .messageBody("You logged into your account. If you did not initiate this request, please contact your bank.")
+                    .build();
+
+            emailService.sendEmailAlert(loginAlert);
+
+            return BankResponse.builder()
+                    .responseCode("Login Success")
+                    .responseMessage(jwtTokenProvider.generateToken(authentication))
+                    .build();
+        } catch (Exception e) {
+            // Handle exception (e.g., logging, returning an error response)
+            return BankResponse.builder()
+                    .responseCode("Login Failed")
+                    .responseMessage(e.getMessage())
+                    .build();
+        }
     }
 
     //balance Enquiry, name Enquiry, Credit and debit, transfer
@@ -151,6 +194,7 @@ public class UserServiceImpl implements UserService {
     public List<User> getAllUser() {
         return userRepository.findAll();
     }
+
 
     @Override
     public BankResponse balanceEnquiry(EnquiryRequest enquiryRequest) {
@@ -222,7 +266,7 @@ public class UserServiceImpl implements UserService {
         User userToCredit = userRepository.findByAccountNumber(request.getAccountNumber());
         userToCredit.setAccountBalance(userToCredit.getAccountBalance().add(request.getAmount()));
         userRepository.save(userToCredit);
-        //System.out.println(userToCredit);
+        System.out.println(userToCredit);
 
         //            save transaction
         TransactionDetails transactionDetails = TransactionDetails.builder()

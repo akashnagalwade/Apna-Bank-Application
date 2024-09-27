@@ -2,6 +2,7 @@ package com.mindspark.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 	@Query("SELECT u FROM User u WHERE u.createdAt < ?1")
 	List<User> findUsersCreatedAt(LocalDate date);
-	
+
+	Optional<User> findByEmail(String email);
+
 	@Query("SELECT u FROM User u WHERE u.accountNumber = ?1")
 	User findByAccountNumber(String accountNumber);
 

@@ -33,4 +33,6 @@ public interface UserService {
 	public BankResponse debitAccount(CreditDebitRequest request);
 
 	public BankResponse transfer(TransferRequest request);
+
+    public BankResponse login(LoginDto loginDto);
 }

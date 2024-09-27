@@ -40,6 +40,13 @@ public class UserController {
 			description = "http Status 200 CREATED"
 	)
 
+	@PostMapping("/login")
+	public BankResponse login(@RequestBody LoginDto loginDto){
+		return userService.login(loginDto);
+
+	}
+
+
 	@PostMapping("/create")
 	public BankResponse createAccount(@Valid @RequestBody UserRequest userRequest) {
 		return userService.createAccount(userRequest);
